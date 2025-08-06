@@ -1,5 +1,5 @@
 from django.http import HttpResponseForbidden
-from .models import IPAddress
+from customer.models import IPAddress
 
 class SimpleMiddleware:
     def __init__(self, get_response):
@@ -7,16 +7,11 @@ class SimpleMiddleware:
 
     def __call__(self, request):
         ip = self.getClientIPAddress(request)
-        print(f"Client IP: {ip}") 
-        
-        try:
-            ip_record = IPAddress.objects.get(ip=ip)
-            if not ip_record.is_active:
-                return JsonResponse({'detail': 'Access denied. IP is inactive.'}, status=403)
-        except IPAddress.DoesNotExist:
-            return JsonResponse({'detail': 'Access denied. IP not recognized.'}, status=403)
+        print(ip,"ip")
+        blockedIPList = IPAddress.objects.filter(is_blocked=True).values_list('ip',flat=True)
+        if ip  in  blockedIPList:
+            return HttpResponseForbidden("Your IP address is blocked.")
         response = self.get_response(request)
-        print("After view")
 
         return response
 

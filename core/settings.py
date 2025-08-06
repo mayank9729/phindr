@@ -17,7 +17,7 @@ SECRET_KEY = 'django-insecure-g$fx03wp&9@dqiix)8@-c5x2rai=g$c$=5$e$*f!f4=6v83bf5
 DEBUG = True
 PRODUCTION = False if os.getenv("PRODUCTION") == 'False' else True
 
-ALLOWED_HOSTS = ['127.0.0.1','127.0.0.1:8000']
+ALLOWED_HOSTS = ['*']
 
 CORS_ORIGIN_WHITELIST = [
     "http://127.0.0.1:8000",
@@ -160,6 +160,14 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '5/minute',  # for anonymous users
+        'user': '5/minute',  # for authenticated users
+    }
     
 }
 

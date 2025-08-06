@@ -11,8 +11,10 @@ from django.shortcuts import get_object_or_404
 from .models import Amenity
 from .serializers import AmenitySerializer
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 class AmenityViewSet(viewsets.ViewSet):
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     permission_classes=[AllowAny]
     def list(self, request):
         amenities = Amenity.objects.all()
