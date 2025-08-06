@@ -1,6 +1,6 @@
 from .serializers import *
 from .models import *
-from core.utils.permissions import IsSeller,IsBuyer,IsAdmin
+from core.utils.permissions import IsBuyer,IsAdmin
 from rest_framework import viewsets, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated

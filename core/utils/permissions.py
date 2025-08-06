@@ -18,11 +18,6 @@ class IsAdmin(BasePermission):
         log_permission_check(request.user, 'admin', allowed, view.__class__.__name__)
         return allowed
 
-class IsSeller(BasePermission):
-    def has_permission(self, request, view):
-        allowed = request.user.is_authenticated and request.user.role == 'seller'
-        log_permission_check(request.user, 'seller', allowed, view.__class__.__name__)
-        return allowed
 
 class IsBuyer(BasePermission):
     def has_permission(self, request, view):

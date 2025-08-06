@@ -13,3 +13,4 @@ class ViewingHistoryAdmin(admin.ModelAdmin):
     search_fields = ['id', 'user' ]
 admin.site.register(ViewingHistory, ViewingHistoryAdmin)
 
+

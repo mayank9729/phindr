@@ -51,3 +51,6 @@ class SharedProperty(models.Model):
     co_applicant_email = models.EmailField()
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
     shared_at = models.DateTimeField(auto_now_add=True)
+    
+
+    

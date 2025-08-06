@@ -52,3 +52,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     class Meta:
         db_table = 'customer'
         verbose_name = ("Customer")
+        
+class IPAddress(models.Model):
+    ip = models.GenericIPAddressField(null=True,blank=True)
+    is_blocked=models.BooleanField(default=False)
