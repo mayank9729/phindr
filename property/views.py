@@ -8,11 +8,10 @@ from .serializers import *
 from .filters import PropertyFilter
 from .permissions import IsOwnerOrReadOnly
 from django.shortcuts import get_object_or_404
-from .models import Amenity
-from .serializers import AmenitySerializer
 from rest_framework.permissions import AllowAny
 
 class AmenityViewSet(viewsets.ViewSet):
+    permission_class=[AllowAny]
     def list(self, request):
         amenities = Amenity.objects.all()
         serializer = AmenitySerializer(amenities, many=True)
@@ -45,6 +44,7 @@ class AmenityViewSet(viewsets.ViewSet):
 
 
 class PropertyViewSet(viewsets.ModelViewSet):
+    permission_class=[AllowAny]
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
 
@@ -61,7 +61,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
 class FavoriteViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-
+    
     def list(self, request):
         queryset = Favorite.objects.filter(user=request.user)
         serializer = FavoriteSerializer(queryset, many=True)
