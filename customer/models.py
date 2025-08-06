@@ -27,6 +27,11 @@ class UserManager(BaseUserManager):
 
 # Customer
 class User(AbstractBaseUser,PermissionsMixin):
+    ROLE_CHOICES = (
+        ('buyer', 'Buyer'),
+        ('admin', 'Admin'),
+        ('seller', 'Seller'),
+    )
     first_name  =   models.CharField(max_length=50,blank=True,null=True)
     last_name   =   models.CharField(max_length=50,blank=True,null=True)
     email       =   models.EmailField(max_length=50,unique=True,null=True,blank=True)
@@ -34,9 +39,11 @@ class User(AbstractBaseUser,PermissionsMixin):
     is_active   =   models.BooleanField(default=True)
     is_staff    =   models.BooleanField(default=False)
     is_admin    =   models.BooleanField(default=False)
+    role        =   models.CharField(max_length=20, choices=ROLE_CHOICES, default='buyer')
     unique_id   =   models.CharField(max_length=8,default=uuid.uuid4().hex[:6].upper())
     update_at   =   models.DateField(default=datetime.date.today)
     created_at  =   models.DateField(default=datetime.date.today)
+    profile_image = models.ImageField(upload_to='uploads/', null=True, blank=True)
     objects     =   UserManager()
     token       =   models.CharField(max_length=100,blank=True,null=True)
 
@@ -45,8 +52,3 @@ class User(AbstractBaseUser,PermissionsMixin):
     class Meta:
         db_table = 'customer'
         verbose_name = ("Customer")
-
-class LicenceCode(Common):
-    user    = models.ForeignKey(User, on_delete=models.CASCADE)
-    licence = models.CharField(max_length=20,null=True,blank=True)
-    team_id = models.IntegerField(null=True,blank=True)

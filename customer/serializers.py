@@ -1,15 +1,19 @@
+import profile
+from typing import Required
 from rest_framework import serializers
-from .models import User,LicenceCode
+from .models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.hashers import make_password,check_password
 from core.utils.common import generateToken
 
+# ✅ for users registration.
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password    = serializers.CharField(required=True)
-    first_name  = serializers.CharField(required=True)
+    first_name  = serializers.CharField(required=False)
     last_name   = serializers.CharField(required=False,allow_null=True, allow_blank=True)
     email       = serializers.CharField(required=True,validators=[UniqueValidator(queryset=User.objects.all(),message='Email already exists')])
-
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, default='customer')
+    
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data.get('password'))
         validated_data['is_active'] = True
@@ -17,7 +21,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('id', 'email','phone', 'unique_id','password','first_name','last_name')
+        fields = ('id', 'email','phone', 'unique_id','password','first_name','last_name','role')
         extra_kwargs = {
             'password': {
                 'required': True
@@ -26,17 +30,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 'required': True
             },
             'first_name': {
-                'required': True
+                'required': False
             },
             'last_name': {
                 'required': False
             }
         }
 
+# ✅ for user login .
 class UserLoginSerializer(serializers.Serializer):
     email       = serializers.EmailField(required=True)
-    password    = serializers.CharField(required=True)
-    
+    password    = serializers.CharField(required=True,write_only=True)
     class Meta:
         model = User
         fields = "__all__"
@@ -64,14 +68,17 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('Must include "email" and "password"')
         return data
   
+# ✅ for userprofile and to update passord if you know your old one.
 class UserProfileSerializer(serializers.ModelSerializer):
     old_password = serializers.CharField(write_only=True, required=False)
     new_password = serializers.CharField(write_only=True, required=False)
-    email           = serializers.EmailField(required=False)
-
+    email        = serializers.EmailField(required=False)
+    role         = serializers.CharField(read_only=True)
+    profile_image = serializers.ImageField(required=False,use_url=True)
+    
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email','password', 'old_password', 'new_password')
+        fields = ('first_name', 'last_name', 'email','password', 'old_password', 'new_password','role','profile_image')
         extra_kwargs = {
             'email': {'read_only': True},
             'password': {'write_only': True, 'required': False},
@@ -80,6 +87,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         old_password = attrs.get('old_password')
         new_password = attrs.get('new_password')
+        
+        
         if new_password and not old_password:
             raise serializers.ValidationError({"old_password": "This field is required to update the password."})
         if old_password and not new_password:
@@ -105,6 +114,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
        
+# ✅ for user in case he/she forgets the password can get a reset token.
 class ForgotAccountValidationSerializer(serializers.Serializer):
     email    = serializers.CharField(required=True)
     def validate(self, attrs):
@@ -127,7 +137,8 @@ class ForgotAccountValidationSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError({"email": "Email is required"}) 
         return attrs
-    
+
+# ✅ for user to reset  the password by his token .
 class ResetPasswordSerializer(serializers.Serializer):
     password    = serializers.CharField(required=True)
     token       = serializers.CharField(required=True)
@@ -144,3 +155,23 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"token": "token is expired"}) 
         return attrs
     
+# ✅ for the admim , only he can see the view of this serializer.
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=User
+        fields=['id','email','first_name','last_name','phone','role','is_active']
+        read_only_fields=['id','email',]
+        
+# ✅ for google auth login
+class TypeSerializer(serializers.Serializer):
+    email=serializers.EmailField()
+    type= serializers.CharField(max_length=20)
+    
+    def validate(self,data):
+        type_value = data.get("type")
+        if type_value != "google":
+            raise serializers.ValidationError({'error':'Type must be google'})
+        
+        return data
+
+            
