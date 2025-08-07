@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+from logging.handlers import TimedRotatingFileHandler
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -165,8 +166,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '5/minute',  # for anonymous users
-        'user': '5/minute',  # for authenticated users
+        'anon': '5/hour',  # for anonymous users
+        'user': '5/hour',  # for authenticated users
     }
     
 }
@@ -220,6 +221,8 @@ EMAIL_USE_SSL = True
 EMAIL_PORT = 465
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+
+    
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -235,9 +238,13 @@ LOGGING = {
             'formatter': 'standard',
         },
         'file': {
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'permissions.log'),
             'formatter': 'standard',
+            'when': 'midnight',
+            'interval': 1,
+            'backupCount': 7,
+            'encoding': 'utf-8',
         },
     },
     'loggers': {

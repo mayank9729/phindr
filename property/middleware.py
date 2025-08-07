@@ -12,7 +12,6 @@ class SimpleMiddleware:
         if ip  in  blockedIPList:
             return HttpResponseForbidden("Your IP address is blocked.")
         response = self.get_response(request)
-
         return response
 
     def getClientIPAddress(self, request):

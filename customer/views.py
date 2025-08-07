@@ -134,7 +134,7 @@ class ProfileView(viewsets.ViewSet):
     
     def get(self, request):
         
-        permission_classes = [IsAuthenticated, IsBuyer,IsSeller]
+        permission_classes = [IsAuthenticated, IsBuyer]
         try:
             serializer = UserProfileSerializer(request.user)
             return ResponseHandler.success(data=serializer.data)
@@ -143,7 +143,8 @@ class ProfileView(viewsets.ViewSet):
             return ResponseHandler.error(message="Something went wrong", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def patch(self, request):
-        permission_classes = [IsAuthenticated, IsBuyer,IsSeller] 
+        permission_classes = [IsAuthenticated, IsBuyer] 
+     
         try:
             serializer = UserProfileSerializer(instance=request.user, data=request.data, partial=True)
             if not serializer.is_valid():
