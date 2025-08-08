@@ -46,11 +46,13 @@ class PropertyNote(models.Model):
     note = models.TextField()
     personal_rating = models.FloatField(null=True, blank=True)
 
+
 class SharedProperty(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_by')
     co_applicant_email = models.EmailField()
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
     shared_at = models.DateTimeField(auto_now_add=True)
     
-
+    def __str__(self):
+        return self.property
     

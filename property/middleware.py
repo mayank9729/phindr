@@ -7,7 +7,7 @@ class SimpleMiddleware:
 
     def __call__(self, request):
         ip = self.getClientIPAddress(request)
-        print(ip,"ip")
+
         blockedIPList = IPAddress.objects.filter(is_blocked=True).values_list('ip',flat=True)
         if ip  in  blockedIPList:
             return HttpResponseForbidden("Your IP address is blocked.")

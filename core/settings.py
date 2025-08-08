@@ -1,11 +1,13 @@
 from pathlib import Path
 from datetime import timedelta
+from datetime import datetime
 import os
-from logging.handlers import TimedRotatingFileHandler
-
+from core.utils.logger.middleware import IPLogMiddleware
+from core.utils.logger.logging_formatter import SafeFormatter
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -43,10 +45,12 @@ INSTALLED_APPS = [
     'corsheaders',
     'customer',
     'property',
+    'support',
  
 ]
 
 MIDDLEWARE = [
+    'core.utils.logger.middleware.IPLogMiddleware',
     'property.middleware.SimpleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -166,11 +170,13 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '5/hour',  # for anonymous users
-        'user': '5/hour',  # for authenticated users
+        'anon': '2/m',  # for anonymous users
+        'user': '2/m',  # for authenticated users
     }
     
 }
+
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
@@ -222,38 +228,106 @@ EMAIL_PORT = 465
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
-    
+# Create logs directory if it doesn't exist    :start
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')         
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    
+    'filters': {
+    'add_ip': {
+        '()': 'core.utils.logger.logging_filter.RequestIPFilter',
+        },
+    },
+    
     'formatters': {
-        'standard': {
-            'format': '[{asctime}] {levelname} {message}',
+        'verbose': {
+            '()': 'core.utils.logger.logging_formatter.SafeFormatter',
+            'format': '{levelname} {asctime} {module} {ip} {process:d} {thread:d} {message}',
             'style': '{',
         },
+        'simple': {
+            '()': 'core.utils.logger.logging_formatter.SafeFormatter',
+            'format': '{levelname} {asctime} {ip} {message}',
+            'style': '{',
+        },
+    
     },
     'handlers': {
         'console': {
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'standard',
+            'formatter': 'simple',
+            'filters': ['add_ip'],
+          
         },
-        'file': {
+        'daily_file': {
+            'level': 'DEBUG',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'permissions.log'),
-            'formatter': 'standard',
+            'filename': os.path.join(LOGS_DIR, f'django_{datetime.now().strftime("%Y-%m-%d")}.log'),
             'when': 'midnight',
             'interval': 1,
-            'backupCount': 7,
+            'backupCount': 30,  # Keep 30 days of logs
+            'formatter': 'verbose',
             'encoding': 'utf-8',
+            'filters': ['add_ip'],
+           
         },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGS_DIR, f'error_{datetime.now().strftime("%Y-%m-%d")}.log'),
+            'when': 'midnight',
+            'interval': 1,
+            'backupCount': 30,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+            'filters': ['add_ip'],
+           
+        },
+        'database_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOGS_DIR, f'database_{datetime.now().strftime("%Y-%m-%d")}.log'),
+            'when': 'midnight',
+            'interval': 1,
+            'backupCount': 15,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+            'filters': ['add_ip'],
+        }
     },
     'loggers': {
-        '': {
-            'handlers': ['console', 'file'],
+        'django': {
+            'handlers': ['console', 'daily_file'],
             'level': 'INFO',
+            'propagate': True,
         },
-    },
+        'django.request': {
+            'handlers': ['error_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['database_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # Your app logger
+        'core': {  # Replace with your actual app name
+            'handlers': ['console', 'daily_file', 'error_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # Root logger
+        '': {
+            'handlers': ['console', 'daily_file'],
+            'level': 'INFO',
+        }
+    }
 }
+# :END
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

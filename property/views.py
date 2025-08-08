@@ -64,8 +64,8 @@ class PropertyViewSet(viewsets.ModelViewSet):
         
 
 class FavoriteViewSet(viewsets.ViewSet):
-   # permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-    permission_classes=[AllowAny]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+  #  permission_classes=[AllowAny]
     def list(self, request):
         queryset = Favorite.objects.filter(user=request.user)
         serializer = FavoriteSerializer(queryset, many=True)
@@ -142,7 +142,7 @@ class ViewingHistoryViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         try:
             history = ViewingHistory.objects.get(pk=pk, user=request.user)
-            self.check_object_permissions(request, history)
+            self.check_object_permissions(request, history[IsAuthenticated, IsOwnerOrReadOnly])
             serializer = ViewingHistorySerializer(history)
             return ResponseHandler.success(data=serializer.data)
         except ViewingHistory.DoesNotExist:
@@ -157,7 +157,7 @@ class ViewingHistoryViewSet(viewsets.ViewSet):
 
 
 class PropertyNoteViewSet(viewsets.ViewSet):
-    permission_classes = [AllowAny]
+    permission_classes =[IsAuthenticated, IsOwnerOrReadOnly]
 
     def list(self, request):
         queryset = PropertyNote.objects.filter(user=request.user)
