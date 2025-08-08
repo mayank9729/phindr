@@ -38,6 +38,16 @@ class SupportTicketViewSet(viewsets.ViewSet):
 
         if ticket.status == new_status:
             return ResponseHandler.error(f"Ticket is already {new_status}.")
+        
+        if new_status == "closed":
+            if not (request.user.is_staff or request.user.is_superuser):
+                return ResponseHandler.error(
+                    "Only admin or staff can close a ticket.",
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
+            ticket.closed_by = request.user
+        else:
+            ticket.closed_by = None 
 
         ticket.status = new_status
         ticket.closed_by = request.user if new_status == 'closed' else None

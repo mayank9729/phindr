@@ -54,5 +54,5 @@ class SharedProperty(models.Model):
     shared_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return self.property
+        return self.co_applicant_email
     

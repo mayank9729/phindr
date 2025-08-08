@@ -25,3 +25,4 @@ class SupportTicketSerializer(serializers.Serializer):
             query_type=validated_data['query_type'],
             raised_by=user
         )
+        

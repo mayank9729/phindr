@@ -38,7 +38,7 @@ class SavedSearchSerializer(serializers.ModelSerializer):
         model = SavedSearch
         fields = '__all__'
 
-class ViewingHistorySerializer(serializers.ModelSerializer):
+class ViewingHistorySerializer(serializers.ModelSerializer): 
     #property = serializers.StringRelatedField(read_only=True)
     user= serializers.StringRelatedField(read_only=True)
     property=PropertySerializer(read_only=True)
