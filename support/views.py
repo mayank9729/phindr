@@ -50,7 +50,6 @@ class SupportTicketViewSet(viewsets.ViewSet):
             ticket.closed_by = None 
 
         ticket.status = new_status
-        ticket.closed_by = request.user if new_status == 'closed' else None
         ticket.save()
 
         return ResponseHandler.success(
