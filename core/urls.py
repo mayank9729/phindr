@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/v1/auth/', include('customer.urls')),
     path('api/v1/auth/', include('property.urls')),
     path('api/v1/auth/', include('support.urls')),
+    path('api/v1/auth/', include('notifications.urls')),
     
 ] 
 

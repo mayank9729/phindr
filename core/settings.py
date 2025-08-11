@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'customer',
     'property',
     'support',
+    'notifications',
  
 ]
 
@@ -170,8 +171,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '2/m',  # for anonymous users
-        'user': '2/m',  # for authenticated users
+        'anon': '10/m',  # for anonymous users
+        'user': '10/m',  # for authenticated users
     }
     
 }
