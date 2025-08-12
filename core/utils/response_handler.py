@@ -7,7 +7,7 @@ class ResponseHandler:
         return Response({
             "status_code": status_code,
             "message": message,
-            "data": data
+            "data": data or []
         }, status=status_code)
 
     @staticmethod

@@ -1,46 +1,124 @@
-from rest_framework import viewsets, status
+# notifications/views.py
+from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .models import UserNotification
-from .serializers import NotificationCreateSerializer, UserNotificationSerializer, NotificationSeenSerializer
+from django.contrib.auth import get_user_model
+from core.utils.response_handler import ResponseHandler
+from .models import Notification, UserNotification
+from .serializers import (
+    NotificationCreateSerializer,
+    UserNotificationSerializer,
+    NotificationSeenSerializer
+)
+from django.utils import timezone
 
-# Admin creates notification
+User = get_user_model()
+
 class NotificationViewSet(viewsets.ViewSet):
-    permission_classes = [IsAdminUser]
-
-    def create(self, request):
-        serializer = NotificationCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"message": "Notification sent successfully"}, status=status.HTTP_201_CREATED)
-
-
-# User views and marks notifications
-class UserNotificationViewSet(viewsets.ViewSet):
+    """
+    Admin can create notifications (to all or selected users)
+    Users can list their notifications
+    Users can mark seen/unseen
+    """
     permission_classes = [IsAuthenticated]
 
+    # List notifications for logged-in user
     def list(self, request):
-        only_unseen = request.query_params.get("only_unseen","false").lower() == "true"
+        seen_param = request.query_params.get("seen")
         
-        if only_unseen:
-            user_notification= UserNotification.objects.filter(user=request.user,seen=False)            
-        else:
-            user_notification = UserNotification.objects.filter(user=request.user)
+        user_notifications = UserNotification.objects.filter(user=request.user).select_related("notification").order_by("-notification__created_at")
         
-        serializer=UserNotificationSerializer(user_notification,many=True)
-        return Response(serializer.data)
+        if seen_param is not None:
+            if seen_param.lower() == "true":
+                user_notifications = user_notifications.filter(seen=True)
+            elif seen_param.lower() == "false":
+                user_notifications = user_notifications.filter(seen=False)
+            else:
+                return ResponseHandler.error(message="Invalid value for 'seen'. Use true or false.")
+        
+        
+        serializer = UserNotificationSerializer(user_notifications, many=True)
+        return ResponseHandler.success(data=serializer.data)
 
-    def update(self, request, pk=None):
-        try:
-            user_notification = UserNotification.objects.get(user=request.user, notification_id=pk)
-        except UserNotification.DoesNotExist:
-            return Response({"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
+    # Admin creates notification
+    def create(self, request):
+        if not request.user.is_staff:
+            return ResponseHandler.error(message="You are not allowed to create notifications")
 
-        serializer = NotificationSeenSerializer(
-            user_notification,
-            data={"notification_id": pk},
-            context={"request": request}
-        )
+        serializer = NotificationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"message": "Notification marked as seen"})
+        data = serializer.validated_data
+
+        # Create notification
+        notification = Notification.objects.create(
+            title=data["title"], message=data["message"]
+        )
+
+        # Assign to users
+        if data.get("send_to_all"):
+            users = User.objects.all()
+        else:
+            users = User.objects.filter(id__in=data["user_ids"])
+
+        bulk_objs = [
+            UserNotification(user=user, notification=notification)
+            for user in users
+        ]
+        UserNotification.objects.bulk_create(bulk_objs, ignore_conflicts=True)
+
+        return ResponseHandler.success(message="Notification created successfully")
+    
+    '''def partial_update(self, request, pk=None):
+        try:
+            user_notification = UserNotification.objects.get(
+                user=request.user,
+                notification_id=pk
+            )
+        except UserNotification.DoesNotExist:
+            return ResponseHandler.error(
+                message="Notification not found",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        if user_notification.seen:
+            return ResponseHandler.success(message="Notification already marked as seen")
+
+        user_notification.seen = True
+        user_notification.seen_at = timezone.now()
+        user_notification.save()
+
+        return ResponseHandler.success(message="Notification marked as seen")
+    '''
+    def partial_update(self,request,pk=None):
+        serializer=NotificationSeenSerializer(data=request.data,context={"request":request})
+        serializer.is_valid()
+        
+        try:
+            user_notification= UserNotification.objects.get(user=request.user,notification_id=pk)
+        except UserNotification.DoesNotExist:
+            return ResponseHandler.error(message="Notification not found for this user.")
+        
+        if user_notification.seen:
+             return ResponseHandler.success(message="Notification is already seen.")
+         
+        user_notification.seen = True
+        user_notification.seen_at = timezone.now()
+        user_notification.save()
+        
+        return ResponseHandler.success(message="Notification is seen successfully.")
+            
+
+        
+    # Mark all as seen
+    def update_all(self, request):
+        user_notification=UserNotification.objects.filter(user=request.user, seen=False)
+        
+        if not user_notification.exists():
+            return ResponseHandler.success(
+                message="All notifications are already marked as seen"
+            )
+        
+        user_notification.update(seen=True)
+        return ResponseHandler.success(
+            message="All notifications marked as seen"
+        )
