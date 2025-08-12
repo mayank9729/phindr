@@ -13,6 +13,7 @@ class SupportTicket(models.Model):
     
     STATUS_CHOICE=[
         ('open','Open'),
+        ('inprogress','Inprogress'),
         ('close','Close'),
     ]
     ticket_id = models.CharField(max_length=8,default=uuid.uuid4().hex[:6].upper())

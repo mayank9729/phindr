@@ -33,14 +33,14 @@ class SupportTicketViewSet(viewsets.ViewSet):
         ticket = get_object_or_404(SupportTicket, pk=pk)
         new_status = request.data.get("status")
 
-        if new_status not in ['open', 'closed']:
-            return ResponseHandler.error("Invalid status. Must be 'open' or 'closed'.")
+        if new_status not in ['open', 'closed','inprogress']:
+            return ResponseHandler.error("Invalid status. Must be 'open', 'closed' or 'inprogress'.")
 
         if ticket.status == new_status:
             return ResponseHandler.error(f"Ticket is already {new_status}.")
         
         if new_status == "closed":
-            if not (request.user.is_staff or request.user.is_superuser or self.request.user):
+            if not (request.user.is_staff or request.user.is_superuser or ticket.owner == request.user ):
                 return ResponseHandler.error(
                     "You are not authorised.",
                     status_code=status.HTTP_403_FORBIDDEN
@@ -67,7 +67,7 @@ class SupportTicketViewSet(viewsets.ViewSet):
 
         tickets = SupportTicket.objects.all()
 
-        if status_filter in ['open', 'closed']:
+        if status_filter in ['open', 'closed','inprogress']:
             tickets = tickets.filter(status=status_filter)
 
         tickets = tickets.order_by("-date" if sort_order == "desc" else "date")
