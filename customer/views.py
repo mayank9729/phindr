@@ -1,7 +1,7 @@
 from .serializers import *
 from .models import *
 from core.utils.permissions import IsBuyer,IsAdmin
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status ,parsers
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from core.utils.response_handler import ResponseHandler
@@ -130,7 +130,7 @@ class UserLoginView(viewsets.ViewSet):
 class ProfileView(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     
     def get(self, request):
         
