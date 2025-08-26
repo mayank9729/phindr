@@ -15,7 +15,7 @@ class SupportTicketSerializer(serializers.Serializer):
     def validate_query (self,value):
         valid_type = dict(SupportTicket.QUERY_TYPES).keys()
         if not value in valid_type:
-            raise serializer.ValidationError(f"Invalid query type!, must  be one of {', '.join(valid_type)} ")
+            raise serializer.ValidationError(f"Invalid query type!, must be one of {', '.join(valid_type)} ")
         return value
         
     def create(self, validated_data):

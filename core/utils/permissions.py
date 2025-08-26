@@ -3,9 +3,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def log_permission_check(user, role_required, passed, view_name=None):
-    user = request.user
-    ip = request.META.get("REMOTE_ADDR")
+def log_permission_check(user, role_required, passed,request = None, view_name=None):
+    
+    if request and hasattr(request, "META"):
+        ip = request.META.get("REMOTE_ADDR", "N/A")
+    else:
+        ip = "N/A"
+
     logger.info(
         f"[PERMISSION CHECK] User: {user.email if user.is_authenticated else 'Anonymous'} | "
         f"Role Required: {role_required} | "

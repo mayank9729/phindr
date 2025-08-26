@@ -24,21 +24,37 @@ class NotificationViewSet(viewsets.ViewSet):
 
     # List notifications for logged-in user
     def list(self, request):
-        seen_param = request.query_params.get("seen")
-        
-        user_notifications = UserNotification.objects.filter(user=request.user).select_related("notification").order_by("-notification__created_at")
-        
-        if seen_param is not None:
-            if seen_param.lower() == "true":
-                user_notifications = user_notifications.filter(seen=True)
-            elif seen_param.lower() == "false":
-                user_notifications = user_notifications.filter(seen=False)
-            else:
-                return ResponseHandler.error(message="Invalid value for 'seen'. Use true or false.")
-        
-        
-        serializer = UserNotificationSerializer(user_notifications, many=True)
-        return ResponseHandler.success(data=serializer.data)
+        try:
+            user = request.user
+            seen_param = request.query_params.get("seen")
+            user_notifications = (
+                UserNotification.objects.filter(user=request.user)
+                .select_related("notification")
+                .order_by("-notification__created_at")
+            )
+
+            if seen_param is not None:
+                if seen_param.lower() in ["true", "1"]:
+                    user_notifications = user_notifications.filter(seen=True)
+                elif seen_param.lower() in ["false", "0"]:
+                    user_notifications = user_notifications.filter(seen=False)
+                else:
+                    return ResponseHandler.error(
+                        message="Invalid value for 'seen'. Use true/false or 1/0.",
+                        status_code=400
+                    )
+
+            serializer = UserNotificationSerializer(user_notifications, many=True)
+            return ResponseHandler.success(
+                data=serializer.data,
+                message="success"
+            )
+        except Exception as e:
+            return ResponseHandler.error(
+                message="Something went wrong while fetching notifications",
+                error=str(e),
+                status_code=500
+            )
 
     # Admin creates notification
     def create(self, request):
@@ -47,28 +63,17 @@ class NotificationViewSet(viewsets.ViewSet):
 
         serializer = NotificationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
+        notification = serializer.save()  # Calls create()
 
-        # Create notification
-        notification = Notification.objects.create(
-            title=data["title"], message=data["message"]
-        )
-
-        # Assign to users
-        if data.get("send_to_all"):
-            users = User.objects.all()
-        else:
-            users = User.objects.filter(id__in=data["user_ids"])
-
-        bulk_objs = [
-            UserNotification(user=user, notification=notification)
-            for user in users
-        ]
-        UserNotification.objects.bulk_create(bulk_objs, ignore_conflicts=True)
-
-        return ResponseHandler.success(message="Notification created successfully")
+        return ResponseHandler.success(
+            data={
+            "notification_id": notification.id,
+            "title": notification.title,
+            "message": notification.message
+            },
+        message="Notification created successfully")
     
-    '''def partial_update(self, request, pk=None):
+    def partial_update(self, request, pk=None):
         try:
             user_notification = UserNotification.objects.get(
                 user=request.user,
@@ -88,27 +93,9 @@ class NotificationViewSet(viewsets.ViewSet):
         user_notification.save()
 
         return ResponseHandler.success(message="Notification marked as seen")
-    '''
-    def partial_update(self,request,pk=None):
-        serializer=NotificationSeenSerializer(data=request.data,context={"request":request})
-        serializer.is_valid()
-        
-        try:
-            user_notification= UserNotification.objects.get(user=request.user,notification_id=pk)
-        except UserNotification.DoesNotExist:
-            return ResponseHandler.error(message="Notification not found for this user.")
-        
-        if user_notification.seen:
-             return ResponseHandler.success(message="Notification is already seen.")
-         
-        user_notification.seen = True
-        user_notification.seen_at = timezone.now()
-        user_notification.save()
-        
-        return ResponseHandler.success(message="Notification is seen successfully.")
+    
+    
             
-
-        
     # Mark all as seen
     def update_all(self, request):
         user_notification=UserNotification.objects.filter(user=request.user, seen=False)

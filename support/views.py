@@ -39,15 +39,24 @@ class SupportTicketViewSet(viewsets.ViewSet):
         if ticket.status == new_status:
             return ResponseHandler.error(f"Ticket is already {new_status}.")
         
-        if new_status == "closed":
-            if not (request.user.is_staff or request.user.is_superuser or ticket.owner == request.user ):
+        if not (request.user.is_staff or request.user.is_superuser):
+            if new_status != "closed":
                 return ResponseHandler.error(
-                    "You are not authorised.",
+                    "You are only allowed to close your tickets.",
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
+            if ticket.raised_by != request.user:
+                return ResponseHandler.error(
+                    "You are not authorised to close this ticket.",
                     status_code=status.HTTP_403_FORBIDDEN
                 )
             ticket.closed_by = request.user
         else:
-            ticket.closed_by = None 
+        # Admin case: handle closed_by field
+            if new_status == "closed":
+                ticket.closed_by = request.user
+            else:
+                ticket.closed_by = None
 
         ticket.status = new_status
         ticket.save()
@@ -66,6 +75,10 @@ class SupportTicketViewSet(viewsets.ViewSet):
         sort_order = request.query_params.get("sort", "date")
 
         tickets = SupportTicket.objects.all()
+
+        if not request.user.is_staff:  # or use your custom role check
+            tickets = tickets.filter(raised_by=request.user)
+
 
         if status_filter in ['open', 'closed','inprogress']:
             tickets = tickets.filter(status=status_filter)

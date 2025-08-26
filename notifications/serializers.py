@@ -18,6 +18,26 @@ class NotificationCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("Provide user_ids or set send_to_all=True")
         return data
 
+    def create(self, validated_data):
+
+        # Create notification
+        notification = Notification.objects.create(
+            title=validated_data["title"], message=validated_data["message"]
+        )
+
+        # Assign to users
+        if validated_data.get("send_to_all"):
+            users = User.objects.all()
+        else:
+            users = User.objects.filter(id__in=validated_data["user_ids"])
+
+        bulk_objs = [
+            UserNotification(user=user, notification=notification)
+            for user in users
+        ]
+        UserNotification.objects.bulk_create(bulk_objs, ignore_conflicts=True)
+
+        return notification
 
 class UserNotificationSerializer(serializers.Serializer):
     id = serializers.IntegerField(source="notification.id")

@@ -107,9 +107,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if old_password and new_password:
             instance.set_password(new_password)
 
-
+        allowed_fields = ["first_name", "last_name", "profile_image"]
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if attr in allowed_fields:
+                setattr(instance, attr, value)
 
         instance.save()
         return instance

@@ -15,7 +15,7 @@ from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 class AmenityViewSet(viewsets.ViewSet):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    permission_classes=[AllowAny]
+    permission_classes=[IsAuthenticated]
     def list(self, request):
         amenities = Amenity.objects.all()
         serializer = AmenitySerializer(amenities, many=True)
@@ -48,7 +48,7 @@ class AmenityViewSet(viewsets.ViewSet):
 
 
 class PropertyViewSet(viewsets.ModelViewSet):
-    permission_classes=[AllowAny]
+    permission_classes=[IsAuthenticated]
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
 
@@ -99,7 +99,6 @@ class FavoriteViewSet(viewsets.ViewSet):
 
 class SavedSearchViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-    permission_class=[AllowAny]
     def list(self, request):
         queryset = SavedSearch.objects.filter(user=request.user)
         serializer = SavedSearchSerializer(queryset, many=True)

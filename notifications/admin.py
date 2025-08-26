@@ -3,9 +3,9 @@ from .models import Notification,UserNotification
 
 
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ['id','title']
+    list_display = ['id','title',"created_at"]
 admin.site.register(Notification,NotificationAdmin)
 
 class UserNotificationAdmin(admin.ModelAdmin):
-    list_display = ['id','seen']
+    list_display = ['id','seen','seen_at']
 admin.site.register(UserNotification, UserNotificationAdmin)

@@ -42,7 +42,7 @@ class ViewingHistory(models.Model):
 
 class PropertyNote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE,null=True, blank=True)
     note = models.TextField()
     personal_rating = models.FloatField(null=True, blank=True)
 
